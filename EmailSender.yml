@@ -1,0 +1,14 @@
+provider:
+  name: faas
+  gateway: http://localhost:8080
+
+functions:
+  EmailSender:
+    lang: csharp
+    handler: ./EmailSender
+    image: emailsender
+    environment:
+      SmtpHost: smtp.gmail.com
+      SmtpPort: 587
+      SmtpUsername: orderfoodlt2018@gmail.com
+      SmtpPassword: 2018Orderfood
