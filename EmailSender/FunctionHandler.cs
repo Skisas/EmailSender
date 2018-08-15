@@ -1,13 +1,20 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
+using System.Security.Authentication;
 using Newtonsoft.Json;
 
 namespace Function
 {
     public class FunctionHandler
     {
-        public void Handle(string input) {
+        private const string SecretsLocation = "/var/openfaas/secrets";
+
+        public void Handle(string input)
+        {
+            Authorize();
 
             if (string.IsNullOrWhiteSpace(input)) throw new ArgumentNullException(nameof(input));
 
@@ -45,12 +52,24 @@ namespace Function
             Console.WriteLine(result);
         }
 
+        private static void Authorize()
+        {
+            var secret = ReadSecret("api-key");
+            var headerAuth = Environment.GetEnvironmentVariable("Http_Authorization");
+
+            if (headerAuth == null || headerAuth != "Bearer " + secret)
+            {
+                Console.WriteLine("Unauthorized");
+                Environment.Exit(1);
+            }
+        }
+
         private static SmtpSettings GetSmtpSettings()
         {
             int GetSmtpPort(string port) => port == null ? 587 : Convert.ToInt32(port);
 
             var smtpHost = Environment.GetEnvironmentVariable("SmtpHost");
-            var smtpPassword = Environment.GetEnvironmentVariable("SmtpPassword");
+            var smtpPassword = ReadSecret("smtp-password");
             var smtpPort = GetSmtpPort(Environment.GetEnvironmentVariable("SmtpPort"));
             var smtpUsername = Environment.GetEnvironmentVariable("SmtpUsername");
 
@@ -61,6 +80,11 @@ namespace Function
                 SmtpPort = smtpPort,
                 SmtpUsername = smtpUsername
             };
+        }
+
+        private static string ReadSecret(string secretName)
+        {
+            return File.ReadAllText($"{SecretsLocation}/{secretName}").Trim();
         }
     }
 }

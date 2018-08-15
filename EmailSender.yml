@@ -11,4 +11,6 @@ functions:
       SmtpHost: smtp.gmail.com
       SmtpPort: 587
       SmtpUsername: orderfoodlt2018@gmail.com
-      SmtpPassword: 2018Orderfood
+    secrets:
+      - api-key
+      - smtp-password
