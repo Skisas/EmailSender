@@ -1,9 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Mail;
-using System.Security.Authentication;
 using Newtonsoft.Json;
 
 namespace Function
@@ -12,9 +10,9 @@ namespace Function
     {
         private const string SecretsLocation = "/var/openfaas/secrets";
 
-        public void Handle(string input)
+        public string Handle(string input)
         {
-            Authorize();
+            if (!Authorize()) return "Unauthorized";
 
             if (string.IsNullOrWhiteSpace(input)) throw new ArgumentNullException(nameof(input));
 
@@ -49,19 +47,23 @@ namespace Function
                 result = ex.Message;
             }
 
-            Console.WriteLine(result);
+            return result;
         }
 
-        private static void Authorize()
+        private static bool Authorize()
         {
             var secret = ReadSecret("api-key");
             var headerAuth = Environment.GetEnvironmentVariable("Http_Authorization");
 
-            if (headerAuth == null || headerAuth != "Bearer " + secret)
-            {
-                Console.WriteLine("Unauthorized");
-                Environment.Exit(1);
+            bool result;
+
+            if (headerAuth == null || headerAuth != "Bearer " + secret) {
+                result = false;
+            } else {
+                result = true;
             }
+
+            return result;
         }
 
         private static SmtpSettings GetSmtpSettings()
